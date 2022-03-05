@@ -1,8 +1,10 @@
 import code
+import itertools
 import numpy as np
 import networkx as nx
 from functools import reduce
 from scipy.linalg import circulant as sp_linalg_circulant
+from scipy.linalg import null_space
 
 
 class Zorbits(object):
@@ -34,17 +36,9 @@ class Zorbits(object):
 		repr_vectors = 1-2*np.array(repr_vectors, dtype=int)
 		return repr_vectors
 
+
 def circulant(x):
 	return sp_linalg_circulant(x).T
-
-def factors(n):
-	S = set(reduce(list.__add__, ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
-	return sorted(list(S))
-
-def projector_range(P, eps=1e-5):
-	lams, U = np.linalg.eigh(P)
-	U = U[:, np.abs(lams-1)<eps]
-	return U
 
 def kron_with_e1(x, n, e1_first=False):
 	A = np.zeros((x.shape[0], n))
@@ -53,39 +47,68 @@ def kron_with_e1(x, n, e1_first=False):
 		A = A.T
 	return A.reshape((-1))
 
+def list_factors(n):
+	S = set(reduce(list.__add__, ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
+	return sorted(list(S))
+
 
 order = 12
-facs = factors(order)
+factors = list_factors(order)
+bools = [False, True]
 
-for p in facs:
+counter = {"type1_proposed": 0, "type1_accepted": 0, "type2_proposed": 0, "type2_accepted": 0}
+
+for (type2, p) in itertools.product(bools, factors):
 	q = order//p
-	P_H_vector = kron_with_e1(np.ones((p)), q)/p
+	if type2:
+		p2 = p//2
+		if p2 not in factors:
+			continue
+		q2 = order//p2
+
+	PH_vector = kron_with_e1(np.ones((p)), q)/p
+	if type2:
+		PH_vector = kron_with_e1(np.ones((p2)), q2)/p2 - PH_vector
 
 	Z = Zorbits(q).transversal()
 	for z in Z:
-		if z.min() == 1: continue
-		print("H = Z_{:d}".format(p))
-		print("z = {}".format( list(z.astype(int)) ))
-		print("===")
 		conv = circulant(z).dot(z)
-		zg_vector = kron_with_e1(conv, p, e1_first=True) \
-			- z.sum()**2/order
-		A_vector = P_H_vector - zg_vector
+		zg_vector = kron_with_e1(conv, p, e1_first=True)
+		if not type2:
+			zg_vector = zg_vector - z.sum()**2/order
+		A_vector = PH_vector - zg_vector
 		A = circulant(A_vector)
-		I = np.eye(order)
-		P_A = I - np.linalg.pinv(I-A).dot(I-A)
+		U = null_space( np.eye(order)-A )
+
+		if type2:
+			counter["type2_proposed"] += 1
+		else:
+			counter["type1_proposed"] += 1
+
+		if U.size == 0:
+			continue
 
 		skip = False
-		mav = np.mean(np.abs(P_A))
+		mav = np.mean(np.abs(U))
+		eps = 1e-10
 		for m in range(1, q):
-			if mav == 0 or np.mean(np.abs((P_A-np.roll(P_A, -m, 0)))) < mav*1e-10:
+			if mav == 0 or np.mean(np.abs(U-np.roll(U, -m, 0))) < eps*mav:
 				skip = True
 				break
 		if skip:
-			print("skip\n")
 			continue
 
-		U = projector_range(P_A)
+		if type2:
+			counter["type2_accepted"] += 1
+		else:
+			counter["type1_accepted"] += 1
+
+		print("H = Z_{:d}".format(p))
+		if type2:
+			print("K = Z_{:d}".format(p2))
+		print("z = {}".format( list(z.astype(int)) ))
+		print("===")
+
 		i = 1
 		for u in U.T:
 			W = z[:,None]*circulant(u)[:q]
@@ -95,47 +118,5 @@ for p in facs:
 		print()
 
 
-###
-
-for p_1 in facs:
-	p_2 = p_1//2
-	if p_2 not in facs:
-		continue
-	q_1 = order//p_1
-	q_2 = order//p_2
-	P_H_vector = kron_with_e1(np.ones((p_1)), q_1)/p_1
-	P_K_vector = kron_with_e1(np.ones((p_2)), q_2)/p_2
-
-	Z = Zorbits(q_1).transversal()
-	for z in Z:
-		if z.min() == 1: continue
-		print("H = Z_{:d}".format(p_1))
-		print("K = Z_{:d}".format(p_2))
-		print("z = {}".format( list(z.astype(int)) ))
-		print("===")
-		conv = circulant(z).dot(z)
-		zg_vector = kron_with_e1(conv, p_1, e1_first=True)
-		A_vector = P_K_vector - P_H_vector - zg_vector
-		A = circulant(A_vector)
-		I = np.eye(order)
-		P_A = I - np.linalg.pinv(I-A).dot(I-A)
-
-		skip = False
-		mav = np.mean(np.abs(P_A))
-		for m in range(1, q_1):
-			if mav == 0 or np.mean(np.abs((P_A-np.roll(P_A, -m, 0)))) < mav*1e-10 \
-				or np.mean(np.abs((P_A+np.roll(P_A, -m, 0)))) < mav*1e-10:
-				skip = True
-				break
-		if skip:
-			print("skip\n")
-			continue
-
-		U = projector_range(P_A)
-		i = 1
-		for u in U.T:
-			W = z[:,None]*circulant(u)[:q_1]
-			print("W_{:d} =".format(i))
-			print(np.round(W, 3))
-			i += 1
-		print()
+print("type 1 accepted/proposed: {:d}/{:d}".format(counter["type1_accepted"], counter["type1_proposed"]))
+print("type 2 accepted/proposed: {:d}/{:d}".format(counter["type2_accepted"], counter["type2_proposed"]))
