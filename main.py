@@ -24,6 +24,7 @@ csv_file.write("json_idx_H,json_idx_K,order_H,order_K,type,num_neg_z,dim,accepte
 for (json_idx_H, dict_H) in enumerate(gap_output):
 	P_H, order_H = gf.permlib.projection_matrix(dict_H["H"], return_order=True)
 	transversal = [gf.permlib.Permutation(t).matrix() for t in dict_H["transversal"]]
+	assert np.array_equal(transversal[0].astype(int), np.eye(transversal[0].shape[0], dtype=int)), "The first transversal element is expected to be the identity."
 	for (json_idx_K, dict_K) in enumerate(dict_H["out"]):
 		order_K = len(dict_K["K"])
 		typenum = 1 if order_K==order_H else 2
@@ -41,7 +42,7 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 			else:
 				A = P_K-P_H - T
 
-			csv_file.write("{:d},{:d},{:d},{:d},{:d},{:d}".format( \
+			csv_file.write("{:d},{:d},{:d},{:d},{:d},{:d},".format( \
 				json_idx_H, json_idx_K, order_H, order_K, typenum, np.sum(z<0) ))
 
 			I = np.eye(A.shape[0])
@@ -53,8 +54,8 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 			skip = False
 			mav = np.mean(np.abs(U))
 			eps = 1e-10
-			tUs = []
-			for t in transversal:
+			tUs = [U]
+			for t in transversal[1:]:
 				tU = t.dot(U)
 				tUs.append(tU)
 				if mav == 0 or np.mean(np.abs(tU-U)) < eps*mav \
@@ -70,7 +71,7 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 			os.makedirs(weights_dir, exist_ok=True)
 			npz_idx = len(os.listdir(weights_dir))
 			np.savez(os.path.join(weights_dir, "{:d}.npz".format(npz_idx) ), z=z, Ws=Ws)
-			csv_file("{:d},True,{:d}\n".format(U.shape[1], npz_idx))
+			csv_file.write("{:d},True,{:d}\n".format(U.shape[1], npz_idx))
 
 
 csv_file.close()

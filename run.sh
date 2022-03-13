@@ -1,6 +1,8 @@
 #!/usr/bin/bash
 set -e
 
+G=C_8
+
 python main.py \
-	--group=D_6 \
-	--output_dir=results/D_6
+	--group=$G \
+	--output_dir=results/$G
