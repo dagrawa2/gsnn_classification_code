@@ -91,12 +91,9 @@ end;;
 
 ### main
 
-rho := (1, 2, 3, 4, 5, 6);;
-tau := (1, 6)(2, 5)(3, 4);;
-degree := 6;;
-
-G := Group(rho, tau);;
-generators := GeneratorsOfGroup(G);;
+degree := Length(input[1]);;
+generators := List(input, PermList);;
+G := GroupWithGenerators(generators);;
 
 subgroups := SubgroupsUpToConjugacy(G);;
 output := [];;
@@ -128,6 +125,6 @@ for H in subgroups do
 od;;
 
 LoadPackage("json");;
-file := OutputTextFile("output.json", false);;
+file := OutputTextFile(output_file, false);;
 GapToJsonStream(file, output);;
 CloseStream(file);;
