@@ -1,16 +1,9 @@
 
-def __call__(group):
+def group(group):
 	letter, degree = tuple(group.split("_"))
 	degree = int(degree)
 	generators = group_dict[letter+"_n"](degree)
 	return generators
-
-group_dict = {
-	"C_n": cyclic, 
-	"D_n": dihedral, 
-	"S_n": symmetric, 
-	"Z_n": cyclic
-}
 
 
 def cyclic(n):
@@ -32,3 +25,11 @@ def symmetric(n):
 	tau[0] = 2
 	tau[1] = 1
 	return [rho, tau]
+
+
+group_dict = {
+	"C_n": cyclic, 
+	"D_n": dihedral, 
+	"S_n": symmetric, 
+	"Z_n": cyclic
+}

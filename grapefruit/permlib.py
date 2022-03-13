@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 import networkx as nx
 import galois
@@ -12,9 +13,9 @@ class Permutation(object):
 	def inverse(self):
 		indices = np.abs(self.perm)
 		signs = np.sign(self.perm)
-		inverse_indices = np.argsort(indices)+1
+		inverse_indices = np.argsort(indices)
 		inverse_signs = signs[inverse_indices]
-		inverse_perm = inverse_indices*inverse_signs
+		inverse_perm = (inverse_indices+1)*inverse_signs
 		return inverse_perm
 
 	def action(self, X, galois_field=False):
@@ -46,7 +47,7 @@ def binary_matrix(degree):
 	return A
 
 def binary_matrix2int_vector(A):
-	out = np.array([int("".join(row), 2) for row in A.T.astype(str)])
+	out = np.array([int("".join(row), 2) for row in np.array(A.T).astype(str)])
 	return out
 
 def zorbit_transversal(generators):
