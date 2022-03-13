@@ -52,7 +52,7 @@ def list_factors(n):
 	return sorted(list(S))
 
 
-order = 12
+order = 8
 factors = list_factors(order)
 bools = [False, True]
 
@@ -115,6 +115,7 @@ for (type2, p) in itertools.product(bools, factors):
 			print("W_{:d} =".format(i))
 			print(np.round(W, 3))
 			i += 1
+			break
 		print()
 
 
