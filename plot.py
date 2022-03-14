@@ -17,10 +17,16 @@ np.random.seed(123)
 
 def generate_cmap(n, signed=False):
 	hues = np.linspace(0, 1, n, endpoint=False)
-	cmap_i = lambda i: colorsys.hls_to_rgb(hues[np.abs(i)-1], 0.5+0.3*int(signed)*np.sign(i), 1)
-	cmap_i = np.vectorize(cmap_i)
-	cmap = lambda A: np.stack(cmap_i(A), -1)
-	return cmap
+	def cmap(i):
+		if i == 0:
+			return (1, 1, 1)
+		hue_idx = np.abs(i)-1
+		if signed:
+			return colorsys.hls_to_rgb(hues[hue_idx], 0.5-0.3*np.sign(i), 1)
+		return colorsys.hls_to_rgb(hues[hue_idx], 0.5, 1)
+	cmap = np.vectorize(cmap)
+	cmap_vec = lambda A: np.stack(cmap(A), -1)
+	return cmap_vec
 
 
 def labeled_W(Ws, eps=1e-5):
@@ -28,8 +34,11 @@ def labeled_W(Ws, eps=1e-5):
 	coefficients = coefficients/np.sqrt(np.sum(coefficients**2))
 	W = np.einsum("i,ijk->jk", coefficients, Ws)
 	W = (W/eps).astype(int)
-	W[W==0] = W.max()+1
 	values, indices = np.unique(np.abs(W), return_index=True)
+	if 0 in values:
+		idx = np.where(values==0)[0][0]
+		values = np.delete(values, idx)
+		indices = np.delete(indices, idx)
 	values = values[np.argsort(indices)]
 	signs = np.sign(W)
 	A = 0
