@@ -29,13 +29,14 @@ def labeled_W(Ws, eps=1e-5):
 	W = np.einsum("i,ijk->jk", coefficients, Ws)
 	W = (W/eps).astype(int)
 	W[W==0] = W.max()+1
-	values = np.unique(np.abs(W))
+	values, indices = np.unique(np.abs(W), return_index=True)
+	values = values[np.argsort(indices)]
 	signs = np.sign(W)
 	A = 0
 	for (i, value) in enumerate(values):
 		B = (np.abs(W)==value).astype(int) * signs
 		B = B.ravel()[ np.nonzero(B.ravel())[0][0] ] * B
-	A = A + (i+1)*B
+		A = A + (i+1)*B
 	return A
 
 
@@ -44,7 +45,7 @@ def plot_W(Ws, filename, format="png"):
 	filename = "{}.{}".format(filename, format)
 	if format == "txt":
 		with open(filename, "w") as f:
-			print(W, file=f)
+			print(np.array2string(W, separator=", "), file=f)
 		return
 	cmap = generate_cmap(np.max(np.abs(W)), signed=(W<0).any())
 	A = cmap(W)
