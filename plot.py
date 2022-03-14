@@ -39,8 +39,13 @@ def labeled_W(Ws, eps=1e-5):
 	return A
 
 
-def plot_W(Ws, filename):
+def plot_W(Ws, filename, format="png"):
 	W = labeled_W(Ws)
+	filename = "{}.{}".format(filename, format)
+	if format == "txt":
+		with open(filename, "w") as f:
+			print(W, file=f)
+		return
 	cmap = generate_cmap(np.max(np.abs(W)), signed=(W<0).any())
 	A = cmap(W)
 	plt.figure()
@@ -54,18 +59,24 @@ def plot_W(Ws, filename):
 if __name__ == "__main__":
 	results_dir = "results"
 	plots_dir = "plots"
+	textplots_dir = "textplots"
 
 	group_dirs = sorted(os.listdir(results_dir))
 	type_dirs = ["type1", "type2"]
 
+	def plot(plots_dir, format):
+		for (group_dir, type_dir) in itertools.product(group_dirs, type_dirs):
+			input_dir = os.path.join(results_dir, group_dir, type_dir)
+			output_dir = os.path.join(plots_dir, group_dir, type_dir)
+			os.makedirs(output_dir, exist_ok=True)
+			for filename in sorted(os.listdir(input_dir)):
+				input_file = os.path.join(input_dir, filename)
+				output_file = os.path.splitext(os.path.join(output_dir, filename))[0]
+				plot_W( np.load(input_file)["Ws"], output_file, format=format)
+
+
 	print("Plotting . . . ")
-	for (group_dir, type_dir) in itertools.product(group_dirs, type_dirs):
-		input_dir = os.path.join(results_dir, group_dir, type_dir)
-		output_dir = os.path.join(plots_dir, group_dir, type_dir)
-		os.makedirs(output_dir, exist_ok=True)
-		for filename in sorted(os.listdir(input_dir)):
-			input_file = os.path.join(input_dir, filename)
-			output_file = os.path.splitext(os.path.join(output_dir, filename))[0]+".png"
-			plot_W( np.load(input_file)["Ws"], output_file)
+	plot(plots_dir, "png")
+	plot(textplots_dir, "txt")
 
 	print("Done!")
