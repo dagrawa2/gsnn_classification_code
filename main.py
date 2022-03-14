@@ -1,6 +1,8 @@
 import os
+import shutil
 import argparse
 import numpy as np
+import pandas as pd
 from scipy.linalg import null_space
 
 import grapefruit as gf
@@ -9,18 +11,29 @@ import grapefruit as gf
 # command-line arguments
 parser=argparse.ArgumentParser()
 parser.add_argument('--group', '-g', required=True, type=str, help='Symmetry group.')
-parser.add_argument('--output_dir', '-o', required=True, type=str, help='Output directory.')
+parser.add_argument('--results_dir', '-r', required=True, type=str, help='Master results directory.')
+parser.add_argument('--overwrite', '-o', action="store_true", help='Overwrite existing results directory.')
 args=parser.parse_args()
 
 
-os.makedirs(args.output_dir, exist_ok=True)
+# create output directories
+output_dir = os.path.join(args.results_dir, args.group)
+if args.overwrite and os.path.isdir(output_dir):
+	shutil.rmtree(output_dir)
+for typenum in [1, 2]:
+	os.makedirs(os.path.join(output_dir, "type{:d}".format(typenum)), exist_ok=True)
 
+# run GAP script
+print("Running GAP script . . . ")
 group_generators = gf.groups.group(args.group)
-gap_output = gf.gapcode.generate_representations(group_generators, os.path.join(args.output_dir, "gap_output.json"))
+gap_output = gf.gapcode.generate_representations(group_generators, os.path.join(output_dir, "gap_output.json"))
 
-csv_file = open(os.path.join(args.output_dir, "numbers.csv"), "w")
-csv_file.write("json_idx_H,json_idx_K,order_H,order_K,type,num_neg_z,dim,accepted,npz_idx\n")
+# initialize CSV log file
+csv_file = open(os.path.join(output_dir, "numbers.csv"), "w")
+csv_file.write("json_idx_H,json_idx_K,order_H,order_K,type,num_neg_z,rank_PA,accepted,npz_idx\n")
 
+# apply linear constraints
+print("Applying linear constraints . . . ")
 for (json_idx_H, dict_H) in enumerate(gap_output):
 	P_H, order_H = gf.permlib.projection_matrix(dict_H["H"], return_order=True)
 	transversal = [gf.permlib.Permutation(t).matrix() for t in dict_H["transversal"]]
@@ -67,13 +80,40 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 				continue
 
 			Ws = np.stack([z_i*tU.T for (z_i, tU) in zip(z, tUs)], 1)
-			weights_dir = os.path.join(args.output_dir, "type{:d}".format(typenum))
+			weights_dir = os.path.join(output_dir, "type{:d}".format(typenum))
 			os.makedirs(weights_dir, exist_ok=True)
 			npz_idx = len(os.listdir(weights_dir))
-			np.savez(os.path.join(weights_dir, "{:d}.npz".format(npz_idx) ), z=z, Ws=Ws)
+			filename = "{:d}-{:d}x{:d}_type{:d}_neg{:d}.npz".format( \
+				npz_idx, Ws.shape[1], Ws.shape[2], typenum, (z<0).sum() )
+			np.savez(os.path.join(weights_dir, filename), z=z, Ws=Ws)
 			csv_file.write("{:d},True,{:d}\n".format(U.shape[1], npz_idx))
 
 
+# close CSV file
 csv_file.close()
+
+# generate notes
+print("Generating notes . . . ")
+df = pd.read_csv(os.path.join(output_dir, "numbers.csv"))
+with open(os.path.join(output_dir, "notes.txt"), "w") as f:
+	# accepted/proposed
+	for typenum in [1, 2]:
+		f.write("Type {:d} accepted/proposed: {:d}/{:d}\n".format( \
+			typenum, df[df.type==typenum].accepted.values.sum(), df[df.type==typenum].shape[0] ))
+	# |G/H| | rank
+	order_G = df.order_H.values.max()
+	order_Hs = np.unique(df[df.accepted].order_H.values)
+	f.write("\n|G/H| | rank(P_A)\n===\n")
+	for order_H in order_Hs:
+		ranks = np.unique( df[(df.order_H==order_H) & (df.accepted)].rank_PA.values )
+		f.write("{:d} | {}\n".format( \
+			order_G//order_H, ", ".join(map(str, ranks)) ))
+	# negative z
+	f.write("\n|G/H| | |z<0|\n===\n")
+	for order_H in order_Hs:
+		negs = np.unique( df[(df.order_H==order_H) & (df.accepted)].num_neg_z.values )
+		f.write("{:d} | {}\n".format( \
+			order_G//order_H, ", ".join(map(str, negs)) ))
+
 
 print("Done!")

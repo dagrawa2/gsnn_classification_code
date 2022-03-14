@@ -1,8 +1,10 @@
 #!/usr/bin/bash
 set -e
 
-G=C_8
+G=C_4
 
 python main.py \
 	--group=$G \
-	--output_dir=results/$G
+	--results_dir=results \
+	--overwrite
+
