@@ -24,8 +24,7 @@ def generate_cmap(n, signed=False):
 		if signed:
 			return colorsys.hls_to_rgb(hues[hue_idx], 0.5-0.3*np.sign(i), 1)
 		return colorsys.hls_to_rgb(hues[hue_idx], 0.5, 1)
-	cmap = np.vectorize(cmap)
-	cmap_vec = lambda A: np.stack(cmap(A), -1)
+	cmap_vec = lambda A: np.array([list(cmap(a)) for a in A.ravel()]).reshape((*A.shape, 3))
 	return cmap_vec
 
 
