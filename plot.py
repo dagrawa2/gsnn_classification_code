@@ -28,7 +28,14 @@ def generate_cmap(n, signed=False):
 	return cmap_vec
 
 
-def labeled_W(Ws, eps=1e-5):
+def sort_W(W, z):
+	zW = z[:,None]*W
+	indices = np.flip( np.lexsort(zW.T) )
+	W = W[indices]
+	return W
+
+
+def label_W(Ws, eps=1e-5, z=None):
 	coefficients = np.random.uniform(-1, 1, (Ws.shape[0]))
 	coefficients = coefficients/np.sqrt(np.sum(coefficients**2))
 	W = np.einsum("i,ijk->jk", coefficients, Ws)
@@ -45,11 +52,13 @@ def labeled_W(Ws, eps=1e-5):
 		B = (np.abs(W)==value).astype(int) * signs
 		B = B.ravel()[ np.nonzero(B.ravel())[0][0] ] * B
 		A = A + (i+1)*B
+	if z is not None:
+		A = sort_W(A, z)
 	return A
 
 
-def plot_W(Ws, filename, format="png"):
-	W = labeled_W(Ws)
+def plot_W(Ws, filename, format="png", z=None):
+	W = label_W(Ws, z=z)
 	filename = "{}.{}".format(filename, format)
 	if format == "txt":
 		with open(filename, "w") as f:
@@ -81,7 +90,8 @@ if __name__ == "__main__":
 			for filename in sorted(os.listdir(input_dir)):
 				input_file = os.path.join(input_dir, filename)
 				output_file = os.path.splitext(os.path.join(output_dir, filename))[0]
-				plot_W( np.load(input_file)["Ws"], output_file, format=format)
+				with np.load(input_file) as f:
+					plot_W(f["Ws"], output_file, format=format, z=f["z"])
 
 
 	print("Plotting . . . ")

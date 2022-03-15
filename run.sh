@@ -1,10 +1,14 @@
 #!/usr/bin/bash
 set -e
 
-G=C_4
+groups=("C_4" "C_8" "D_3" "D_6")
 
-python main.py \
-	--group=$G \
-	--results_dir=results \
-	--overwrite
+for G in ${groups[@]}
+do
+	python main.py \
+		--group=$G \
+		--results_dir=results \
+		--overwrite
+done
 
+echo All done!
