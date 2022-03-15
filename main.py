@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 import argparse
 import numpy as np
@@ -15,6 +16,9 @@ parser.add_argument('--results_dir', '-r', required=True, type=str, help='Master
 parser.add_argument('--overwrite', '-o', action="store_true", help='Overwrite existing results directory.')
 args=parser.parse_args()
 
+
+# mark initial time
+time_0 = time.time()
 
 # create output directories
 output_dir = os.path.join(args.results_dir, args.group)
@@ -114,6 +118,8 @@ with open(os.path.join(output_dir, "notes.txt"), "w") as f:
 		negs = np.unique( df[(df.order_H==order_H) & (df.accepted)].num_neg_z.values )
 		f.write("{:d} | {}\n".format( \
 			order_G//order_H, ", ".join(map(str, negs)) ))
-
+	# time
+	f.write("\nTime: {:d} s\n".format( \
+		int(time.time()-time_0) ))
 
 print("Done!")
