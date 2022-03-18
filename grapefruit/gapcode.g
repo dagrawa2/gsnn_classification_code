@@ -7,10 +7,11 @@ SubgroupsUpToConjugacy := function(G)
 	return reps;;
 end;;
 
-AllLowIndexSubgroups := function(G, index)
-	local reps, subgroups;;
-	reps := LowIndexSubgroups(G, index);;
-	subgroups := Concatenation( List(reps, H->AsList(ConjugacyClassSubgroups(G, H))) );;
+LowIndexSubgroupsUpToParentNormalcy := function(H, transversal, index)
+	local reps, transversal_cap_NH, subgroups;;
+	reps := LowIndexSubgroups(H, index);;
+	transversal_cap_NH := Filtered(transversal, g->ConjugateSubgroup(H, g)=H);;
+	subgroups := Set(Concatenation( List(reps, K->List(transversal_cap_NH, g->ConjugateSubgroup(K, g))) ));;
 	return subgroups;;
 end;;
 
@@ -112,7 +113,7 @@ for H in subgroups do
 	n := Index(G, H);;
 	B_n := HyperoctahedralGroup(n);;
 
-	H_subgroups := AllLowIndexSubgroups(H, 2);;
+	H_subgroups := LowIndexSubgroupsUpToParentNormalcy(H, transversal, 2);;
 	for K in H_subgroups do
 		signatures := List(cocycles, cocycle->CocycleSigns(cocycle, K));;
 		signed_perms := ListN(perms, signatures, HyperoctahedralElement);;
