@@ -118,8 +118,9 @@ for H in subgroups do
 		signatures := List(cocycles, cocycle->CocycleSigns(cocycle, K));;
 		signed_perms := ListN(perms, signatures, HyperoctahedralElement);;
 		centralizer_generators := GeneratorsOfGroup (Centralizer(B_n, GroupWithGenerators(signed_perms)) );;
-		centralizer_generators := List(centralizer_generators, perm->SignedList(perm, n));;
-		Add(record.out, rec(K:=PermsToLists(K, degree), centralizer_generators:=centralizer_generators));;
+		J_generators := GeneratorsOfGroup(Group(Union(centralizer_generators, signed_perms)));;
+		J_generators := List(J_generators, perm->SignedList(perm, n));;
+		Add(record.out, rec(K:=PermsToLists(K, degree), J_generators:=J_generators));;
 	od;;
 
 	Add(output, record);;

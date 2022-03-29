@@ -50,7 +50,7 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 		else:
 			P_K = gf.permlib.projection_matrix(dict_K["K"])
 
-		Z = gf.permlib.zorbit_transversal(dict_K["centralizer_generators"])
+		Z = gf.permlib.zorbit_transversal(dict_K["J_generators"])
 		for z in Z:
 			z_dot_transversal = sum([z_i*t_i for (z_i, t_i) in zip(z, transversal)])
 			T = z_dot_transversal.T.dot(z_dot_transversal)
