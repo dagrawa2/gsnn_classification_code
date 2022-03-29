@@ -10,9 +10,16 @@ end;;
 LowIndexSubgroupsUpToParentNormalcy := function(H, transversal, index)
 	local reps, transversal_cap_NH, subgroups;;
 	reps := LowIndexSubgroups(H, index);;
-	transversal_cap_NH := Filtered(transversal, g->ConjugateSubgroup(H, g)=H);;
-	subgroups := Set(Concatenation( List(reps, K->List(transversal_cap_NH, g->ConjugateSubgroup(K, g))) ));;
-	return subgroups;;
+	if Length(reps)=1 then
+		return reps;;
+	else
+		reps := Filtered(reps, K->Order(K)<Order(H));;
+		transversal_cap_NH := Filtered(transversal, g->ConjugateSubgroup(H, g)=H);;
+		subgroups := Set(Concatenation( List(reps, K->List(transversal_cap_NH, g->ConjugateSubgroup(K, g))) ));;
+		Add(subgroups, H);;
+		subgroups := Reversed(subgroups);;
+		return subgroups;;
+	fi;;
 end;;
 
 PermAndCocycle := function(transversal, g)

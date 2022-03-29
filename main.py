@@ -34,7 +34,7 @@ gap_output = gf.gapcode.generate_representations(group_generators, os.path.join(
 
 # initialize CSV log file
 csv_file = open(os.path.join(output_dir, "numbers.csv"), "w")
-csv_file.write("json_idx_H,json_idx_K,order_H,order_K,type,num_neg_z,rank_PA,accepted,npz_idx\n")
+csv_file.write("json_idx_H,json_idx_K,order_H,order_K,type,class,num_neg_z,rank_PA,accepted,npz_idx\n")
 
 # apply linear constraints
 print("Applying linear constraints . . . ")
@@ -59,8 +59,8 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 			else:
 				A = P_K-P_H - T
 
-			csv_file.write("{:d},{:d},{:d},{:d},{:d},{:d},".format( \
-				json_idx_H, json_idx_K, order_H, order_K, typenum, np.sum(z<0) ))
+			csv_file.write("{:d},{:d},{:d},{:d},{:d},{:d},{:d},".format( \
+				json_idx_H, json_idx_K, order_H, order_K, typenum, json_idx_K, np.sum(z<0) ))
 
 			I = np.eye(A.shape[0])
 			U = null_space(I-A)
@@ -87,8 +87,8 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 			weights_dir = os.path.join(output_dir, "type{:d}".format(typenum))
 			os.makedirs(weights_dir, exist_ok=True)
 			npz_idx = len(os.listdir(weights_dir))
-			filename = "{:d}-{:d}x{:d}_type{:d}_neg{:d}.npz".format( \
-				npz_idx, Ws.shape[1], Ws.shape[2], typenum, (z<0).sum() )
+			filename = "{:d}-{:d}x{:d}_cls{:d}_neg{:d}.npz".format( \
+				npz_idx, Ws.shape[1], Ws.shape[2], json_idx_K, (z<0).sum() )
 			np.savez(os.path.join(weights_dir, filename), z=z, Ws=Ws)
 			csv_file.write("{:d},True,{:d}\n".format(U.shape[1], npz_idx))
 
