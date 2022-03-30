@@ -89,7 +89,8 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 			npz_idx = len(os.listdir(weights_dir))
 			filename = "{:d}-{:d}x{:d}_cls{:d}_neg{:d}.npz".format( \
 				npz_idx, Ws.shape[1], Ws.shape[2], json_idx_K, (z<0).sum() )
-			np.savez(os.path.join(weights_dir, filename), z=z, Ws=Ws)
+			np.savez(os.path.join(weights_dir, filename), Ws=Ws, z=z, \
+				rho_generators=np.array(dict_K["rho_generators"]) )
 			csv_file.write("{:d},True,{:d}\n".format(U.shape[1], npz_idx))
 
 

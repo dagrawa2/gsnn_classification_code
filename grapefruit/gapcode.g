@@ -142,7 +142,8 @@ for H in subgroups do
 		centralizer_generators := GeneratorsOfGroup (Centralizer(B_n, GroupWithGenerators(signed_perms)) );;
 		J_generators := GeneratorsOfGroup(Group(Union(centralizer_generators, signed_perms)));;
 		J_generators := List(J_generators, perm->SignedList(perm, n));;
-		Add(record.out, rec(K:=PermsToLists(K, degree), J_generators:=J_generators));;
+		rho_generators := List(signed_perms, perm->SignedList(perm, n));;
+		Add(record.out, rec(K:=PermsToLists(K, degree), J_generators:=J_generators, rho_generators:=rho_generators));;
 	od;;
 
 	Add(output, record);;
