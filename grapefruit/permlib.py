@@ -11,6 +11,11 @@ class Permutation(object):
 		self.degree = len(self.perm)
 
 	def inverse(self):
+		inverse_perm = self.inverse_array()
+		inverse = Permutation(inverse_perm)
+		return inverse
+
+	def inverse_array(self):
 		indices = np.abs(self.perm)
 		signs = np.sign(self.perm)
 		inverse_indices = np.argsort(indices)
@@ -19,7 +24,7 @@ class Permutation(object):
 		return inverse_perm
 
 	def action(self, X, galois_field=False):
-		inverse_perm = self.inverse()
+		inverse_perm = self.inverse_array()
 		indices = np.abs(inverse_perm)-1
 		signs = np.sign(inverse_perm)
 		if galois_field:

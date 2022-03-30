@@ -77,7 +77,7 @@ def build_graph(rho_generators, z, colors):
 	G = nx.DiGraph()
 	G.add_nodes_from(domain)
 	for (gen, color) in zip(rho_generators, colors):
-		permuted = z*gf.permlib.Permutation(gen).action(z*domain)
+		permuted = z*gf.permlib.Permutation(gen).inverse().action(z*domain)
 		permuted, signs = np.abs(permuted), np.sign(permuted)
 		for (i, j, sign) in zip(domain, permuted, signs):
 			G.add_edge(i, j, color=color, sign=sign)
