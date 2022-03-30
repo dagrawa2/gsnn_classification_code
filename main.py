@@ -22,10 +22,10 @@ time_0 = time.time()
 
 # create output directories
 output_dir = os.path.join(args.results_dir, args.group)
+npzs_dir = os.path.join(output_dir, "npzs")
 if args.overwrite and os.path.isdir(output_dir):
 	shutil.rmtree(output_dir)
-for typenum in [1, 2]:
-	os.makedirs(os.path.join(output_dir, "type{:d}".format(typenum)), exist_ok=True)
+os.makedirs(npzs_dir, exist_ok=True)
 
 # run GAP script
 print("Running GAP script . . . ")
@@ -84,12 +84,10 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 				continue
 
 			Ws = np.stack([z_i*tU.T for (z_i, tU) in zip(z, tUs)], 1)
-			weights_dir = os.path.join(output_dir, "type{:d}".format(typenum))
-			os.makedirs(weights_dir, exist_ok=True)
-			npz_idx = len(os.listdir(weights_dir))
+			npz_idx = len(os.listdir(npzs_dir))
 			filename = "{:d}-{:d}x{:d}_cls{:d}_neg{:d}.npz".format( \
 				npz_idx, Ws.shape[1], Ws.shape[2], json_idx_K, (z<0).sum() )
-			np.savez(os.path.join(weights_dir, filename), Ws=Ws, z=z, \
+			np.savez(os.path.join(npzs_dir, filename), Ws=Ws, z=z, \
 				rho_generators=np.array(dict_K["rho_generators"]) )
 			csv_file.write("{:d},True,{:d}\n".format(U.shape[1], npz_idx))
 

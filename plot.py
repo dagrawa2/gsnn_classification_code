@@ -3,6 +3,9 @@ import itertools
 import colorsys
 import numpy as np
 import pandas as pd
+import networkx as nx
+
+import grapefruit as gf
 
 import matplotlib
 #matplotlib.use("agg")
@@ -48,45 +51,83 @@ def label_W(Ws, eps=1e-5):
 	return A
 
 
-def plot_W(Ws, filename, format="png"):
+def plot_W(Ws, filename):
 	W = label_W(Ws)
-	filename = "{}.{}".format(filename, format)
-	if format == "txt":
-		with open(filename, "w") as f:
-			print(np.array2string(W, separator=", "), file=f)
-		return
 	cmap = generate_cmap(np.max(np.abs(W)), signed=(W<0).any())
 	A = cmap(W)
 	plt.figure()
 	plt.matshow(A)
 	plt.xlabel("Input neurons", fontsize=8)
 	plt.ylabel("Hidden neurons", fontsize=8)
-	plt.savefig(filename)
+	plt.savefig(filename+".png")
 	plt.close("all")
+
+
+def textplot_W(Ws, filename):
+	W = label_W(Ws)
+	with open(filename+".txt", "w") as f:
+		print(np.array2string(W, separator=", "), file=f)
+
+
+### visualize cohomology
+
+def build_graph(rho_generators, z, colors):
+	n = len(z)
+	domain = np.arange(n)+1
+	G = nx.DiGraph()
+	G.add_nodes_from(domain)
+	for (gen, color) in zip(rho_generators, colors):
+		permuted = z*gf.permlib.Permutation(gen).action(z*domain)
+		permuted, signs = np.abs(permuted), np.sign(permuted)
+		for (i, j, sign) in zip(domain, permuted, signs):
+			G.add_edge(i, j, color=color, sign=sign)
+	return G
+
+
+def plot_cohomology(rho_generators, z, colors, filename):
+	colors = colors[:len(rho_generators)]
+	G = build_graph(rho_generators, z, colors)
+	pos = nx.planar_layout(G)
+	signs = [1, -1]
+	styles = {1: "solid", -1: "dotted"}
+	nx.draw(G, pos=pos, edgelist=[], node_color="black", with_labels=True)
+	for (color, sign) in itertools.product(colors, signs):
+		edgelist = [key for (key, value) in dict(G.edges).items() if value["color"]==color and value["sign"]==sign]
+		nx.draw(G, pos=pos, nodelist=[], edgelist=edgelist, edge_color=color, style=styles[sign])
+	plt.savefig(filename+".png")
+	plt.close()
+
+
+def textplot_cohomology(rho_generators, z, colors, filename):
+	colors = colors[:len(rho_generators)]
+	G = build_graph(rho_generators, z, colors)
+	with open(filename+".csv", "w") as f:
+		f.write("i,j,color,sign\n")
+		for (key, value) in dict(G.edges).items():
+			f.write("{:d},{:d},{},{:d}\n".format( \
+				key[0], key[1], value["color"], value["sign"] ))
 
 
 if __name__ == "__main__":
 	results_dir = "results"
 	plots_dir = "plots"
-	textplots_dir = "textplots"
 
-	group_dirs = sorted(os.listdir(results_dir))
-	type_dirs = ["type1", "type2"]
-
-	def plot(plots_dir, format):
-		for (group_dir, type_dir) in itertools.product(group_dirs, type_dirs):
-			input_dir = os.path.join(results_dir, group_dir, type_dir)
-			output_dir = os.path.join(plots_dir, group_dir, type_dir)
-			os.makedirs(output_dir, exist_ok=True)
-			for filename in sorted(os.listdir(input_dir)):
-				input_file = os.path.join(input_dir, filename)
-				output_file = os.path.splitext(os.path.join(output_dir, filename))[0]
-				with np.load(input_file) as f:
-					plot_W(f["Ws"], output_file, format=format)
-
+	groups = sorted(os.listdir(results_dir))
+	colors = ["red", "blue", "green"]
 
 	print("Plotting . . . ")
-	plot(plots_dir, "png")
-	plot(textplots_dir, "txt")
+	for group in groups:
+		os.makedirs(os.path.join(plots_dir, "vis", group, "weights"), exist_ok=True)
+		os.makedirs(os.path.join(plots_dir, "vis", group, "cohomology"), exist_ok=True)
+		os.makedirs(os.path.join(plots_dir, "text", group, "weights"), exist_ok=True)
+		os.makedirs(os.path.join(plots_dir, "text", group, "cohomology"), exist_ok=True)
+		for filename in sorted(os.listdir(os.path.join(results_dir, group, "npzs"))):
+			with np.load(os.path.join(results_dir, group, "npzs", filename)) as f:
+				filename = os.path.splitext(filename)[0]
+				plot_W(f["Ws"], os.path.join(plots_dir, "vis", group, "weights", filename))
+				plot_cohomology(f["rho_generators"], f["z"], colors, os.path.join(plots_dir, "vis", group, "cohomology", filename))
+				textplot_W(f["Ws"], os.path.join(plots_dir, "text", group, "weights", filename))
+				textplot_cohomology(f["rho_generators"], f["z"], colors, os.path.join(plots_dir, "text", group, "cohomology", filename))
+
 
 	print("Done!")
