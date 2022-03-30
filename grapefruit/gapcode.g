@@ -1,5 +1,20 @@
 ### functions
 
+MyRightTransversal := function(G, H)
+	local out;;
+	out := rec();;
+	out.gaptransversal := RightTransversal(G, H);;
+	out.elements := List(out.gaptransversal, g->Minimum(List(H*g)));;
+	out.perm := Sortex(out.elements);;
+	return out;;
+end;;
+
+MyPositionCanonical := function(transversal, g)
+	local pos;;
+	pos := PositionCanonical(transversal.gaptransversal, g)^transversal.perm;;
+	return pos;;
+end;;
+
 SubgroupsUpToConjugacy := function(G)
 	local classes, reps;;
 	classes := ConjugacyClassesSubgroups(G);;
@@ -14,7 +29,7 @@ LowIndexSubgroupsUpToParentNormalcy := function(H, transversal, index)
 		return reps;;
 	else
 		reps := Filtered(reps, K->Order(K)<Order(H));;
-		transversal_cap_NH := Filtered(transversal, g->ConjugateSubgroup(H, g)=H);;
+		transversal_cap_NH := Filtered(transversal.elements, g->ConjugateSubgroup(H, g)=H);;
 		subgroups := Set(Concatenation( List(reps, K->List(transversal_cap_NH, g->ConjugateSubgroup(K, g))) ));;
 		Add(subgroups, H);;
 		subgroups := Reversed(subgroups);;
@@ -25,11 +40,11 @@ end;;
 PermAndCocycle := function(transversal, g)
 	local pc, t, tg, pos;;
 	pc := rec(perm:=[], cocycle:=[]);;
-	for t in transversal do
+	for t in transversal.elements do
 		tg := t*g;;
-		pos := PositionCanonical(transversal, tg);;
+		pos := MyPositionCanonical(transversal, tg);;
 		Add(pc.perm, pos);;
-		Add(pc.cocycle, tg*Inverse(transversal[pos]));;
+		Add(pc.cocycle, tg*Inverse(transversal.elements[pos]));;
 	od;;
 	return pc;;
 end;;
@@ -106,8 +121,8 @@ G := GroupWithGenerators(generators);;
 subgroups := SubgroupsUpToConjugacy(G);;
 output := [];;
 for H in subgroups do
-	transversal := RightTransversal(G, H);;
-	record := rec(H:=PermsToLists(H, degree), transversal:=PermsToLists(transversal, degree), out:=[]);;
+	transversal := MyRightTransversal(G, H);;
+	record := rec(H:=PermsToLists(H, degree), transversal:=PermsToLists(transversal.elements, degree), out:=[]);;
 
 	perms := [];;
 	cocycles := [];;
