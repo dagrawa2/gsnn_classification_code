@@ -74,7 +74,7 @@ def textplot_W(Ws, filename):
 def build_graph(rho_generators, z, colors):
 	n = len(z)
 	domain = np.arange(n)+1
-	G = nx.DiGraph()
+	G = nx.MultiDiGraph()
 	G.add_nodes_from(domain)
 	for (gen, color) in zip(rho_generators, colors):
 		permuted = z*gf.permlib.Permutation(gen).inverse().action(z*domain)
