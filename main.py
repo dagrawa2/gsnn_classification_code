@@ -85,8 +85,8 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 
 			Ws = np.stack([z_i*tU.T for (z_i, tU) in zip(z, tUs)], 1)
 			npz_idx = len(os.listdir(npzs_dir))
-			filename = "{:d}-{:d}x{:d}_cls{:d}_neg{:d}.npz".format( \
-				npz_idx, Ws.shape[1], Ws.shape[2], json_idx_K, (z<0).sum() )
+			filename = "{:d}-H{:d}_K{:d}_{:d}x{:d}_neg{:d}.npz".format( \
+				npz_idx, json_idx_H, json_idx_K, Ws.shape[1], Ws.shape[2], (z<0).sum() )
 			np.savez(os.path.join(npzs_dir, filename), Ws=Ws, z=z, \
 				rho_generators=np.array(dict_K["rho_generators"]) )
 			csv_file.write("{:d},True,{:d}\n".format(U.shape[1], npz_idx))
