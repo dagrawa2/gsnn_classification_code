@@ -10,8 +10,8 @@ import grapefruit as gf
 import matplotlib
 #matplotlib.use("agg")
 import matplotlib.pyplot as plt
-matplotlib.rc("xtick", labelsize=8)
-matplotlib.rc("ytick", labelsize=8)
+matplotlib.rc("xtick", labelsize=10)
+matplotlib.rc("ytick", labelsize=10)
 
 np.random.seed(123)
 
@@ -57,8 +57,10 @@ def plot_W(Ws, filename):
 	A = cmap(W)
 	plt.figure()
 	plt.matshow(A)
-	plt.xlabel("Input neurons", fontsize=8)
-	plt.ylabel("Hidden neurons", fontsize=8)
+	plt.xticks(np.arange(A.shape[1]), np.arange(A.shape[1])+1)
+	plt.yticks(np.arange(A.shape[0]), np.arange(A.shape[0])+1)
+	plt.xlabel("Input neurons", fontsize=16)
+	plt.ylabel("Hidden neurons", fontsize=16)
 	plt.savefig(filename+".png")
 	plt.close("all")
 
@@ -76,24 +78,35 @@ def build_graph(rho_generators, z, colors):
 	domain = np.arange(n)+1
 	G = nx.MultiDiGraph()
 	G.add_nodes_from(domain)
+	edge_counter = {}
 	for (gen, color) in zip(rho_generators, colors):
 		permuted = z*gf.permlib.Permutation(gen).inverse().action(z*domain)
 		permuted, signs = np.abs(permuted), np.sign(permuted)
 		for (i, j, sign) in zip(domain, permuted, signs):
-			G.add_edge(i, j, color=color, sign=sign)
+			edge = tuple(sorted([i, j]))
+			if edge not in edge_counter:
+				rad = 0
+				edge_counter[edge] = [0, 0, 0]
+			else:
+				idx = int(i>j) + 2*int(i==j)
+				rad = 0.2*(1 + edge_counter[edge][idx])
+				edge_counter[edge][idx] += 1
+			G.add_edge(i, j, color=color, sign=sign, rad=rad)
 	return G
 
 
-def plot_cohomology(rho_generators, z, colors, filename):
+def plot_cohomology(rho_generators, z, colors, filename, layout="planar"):
 	colors = colors[:len(rho_generators)]
 	G = build_graph(rho_generators, z, colors)
-	pos = nx.planar_layout(G)
+	pos = getattr(nx, "{}_layout".format(layout))(G)
 	signs = [1, -1]
-	styles = {1: "solid", -1: "dotted"}
-	nx.draw(G, pos=pos, edgelist=[], node_color="black", with_labels=True)
+	styles = {1: "solid", -1: (0, (2, 2))}
+	nx.draw_networkx_nodes(G, pos=pos, node_color="white")
+	nx.draw_networkx_labels(G, pos=pos)
 	for (color, sign) in itertools.product(colors, signs):
-		edgelist = [key for (key, value) in dict(G.edges).items() if value["color"]==color and value["sign"]==sign]
-		nx.draw(G, pos=pos, nodelist=[], edgelist=edgelist, edge_color=color, style=styles[sign])
+		edge_list = [key for (key, value) in dict(G.edges).items() if value["color"]==color and value["sign"]==sign]
+		for edge in edge_list:
+			nx.draw_networkx_edges(G, pos=pos, edgelist=[edge], edge_color=color, style=styles[sign], connectionstyle="arc3, rad={}".format(G.edges[edge]["rad"]))
 	plt.savefig(filename+".png")
 	plt.close()
 
@@ -114,6 +127,7 @@ if __name__ == "__main__":
 
 	groups = sorted(os.listdir(results_dir))
 	colors = ["red", "blue", "green"]
+	layout = lambda group: "circular" if group[0]=="C" else "planar"
 
 	print("Plotting . . . ")
 	for group in groups:
@@ -125,7 +139,7 @@ if __name__ == "__main__":
 			with np.load(os.path.join(results_dir, group, "npzs", filename)) as f:
 				filename = os.path.splitext(filename)[0]
 				plot_W(f["Ws"], os.path.join(plots_dir, "vis", group, "weights", filename))
-				plot_cohomology(f["rho_generators"], f["z"], colors, os.path.join(plots_dir, "vis", group, "cohomology", filename))
+				plot_cohomology(f["rho_generators"], f["z"], colors, os.path.join(plots_dir, "vis", group, "cohomology", filename), layout=layout(group))
 				textplot_W(f["Ws"], os.path.join(plots_dir, "text", group, "weights", filename))
 				textplot_cohomology(f["rho_generators"], f["z"], colors, os.path.join(plots_dir, "text", group, "cohomology", filename))
 
