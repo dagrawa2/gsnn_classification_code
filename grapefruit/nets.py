@@ -9,10 +9,14 @@ from . import utils
 
 class GSNN(nn.Module):
 
-	def __init__(self, input_dir, architecture_idx):
+	def __init__(self, input_dir, architecture_idx, seed=0, generate_data=False):
 		super(GSNN, self).__init__()
 		self.input_dir = input_dir
 		self.architecture_idx = architecture_idx
+		self.seed = seed
+		self.generate_data = generate_data
+
+		torch.manual_seed(seed)
 
 		filename = sorted(os.listdir(input_dir))[architecture_idx]
 		self.type = int( re.search(r"K([0-9]+)_", filename).group(1) )
@@ -22,13 +26,17 @@ class GSNN(nn.Module):
 			self.Ws = torch.tensor(f["Ws"], dtype=torch.float32)
 			self.z = torch.tensor(f["z"], dtype=torch.float32)
 
-		self.a = nn.Parameter(2*torch.bernoulli(torch.tensor(0.5))-1)
+		self.a = nn.Parameter(2*torch.bernoulli(torch.tensor(0.5))-1) \
+			if not generate_data else \
+			nn.Parameter(torch.tensor(1.0))
 		self.b = nn.Parameter(torch.tensor(0.0))
 		if self.type == 2:
 			self.b.requires_grad = False
 
 		self.W_unconstrained = nn.Parameter(utils.normalize(torch.randn(self.Ws.shape[0])))
-		self.c_unconstrained = nn.Parameter(0.1*torch.randn(self.U.shape[0]))
+		self.c_unconstrained = nn.Parameter(0.1*torch.randn(self.U.shape[0])) \
+			if not generate_data else \
+			nn.Parameter(torch.zeros(self.U.shape[0]))
 
 		self.d = nn.Parameter(torch.tensor(0.0))
 

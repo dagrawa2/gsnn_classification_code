@@ -24,7 +24,8 @@ parser.add_argument('--n_points', '-np', default=10, type=int, help='Number of p
 parser.add_argument('--input_dir', '-i', required=True, type=str, help='Directory of architectures.')
 parser.add_argument('--generator_idx', '-gi', required=True, type=int, help='Index of generator architecture in input directory.')
 parser.add_argument('--regressor_idx', '-ri', required=True, type=int, help='Index of regressor architecture in input directory.')
-parser.add_argument('--seed', '-sd', default=0, type=int, help='Pytorch RNG seed.')
+parser.add_argument('--generator_seed', '-gs', default=0, type=int, help='Pytorch RNG seed for generator network.')
+parser.add_argument('--regressor_seed', '-ds', default=0, type=int, help='Pytorch RNG seed for regressor network.')
 # SGD hyperparameters
 parser.add_argument('--batch_size', '-b', default=128, type=int, help='Minibatch size.')
 parser.add_argument('--epochs', '-e', default=10, type=int, help='Number of epochs for training.')
@@ -54,7 +55,7 @@ os.makedirs(os.path.join(output_dir, "generator"), exist_ok=args.exist_ok)
 os.makedirs(os.path.join(output_dir, "regressor"), exist_ok=args.exist_ok)
 
 # build generating network
-generator = gf.nets.GSNN(args.input_dir, args.generator_idx)
+generator = gf.nets.GSNN(args.input_dir, args.generator_idx, seed=args.generator_seed, generate_data=True)
 trainer = gf.trainers.Trainer(generator, epochs=args.epochs, lr=args.lr, device=args.device)
 trainer.save_model(os.path.join(output_dir, "generator/model.pth"))
 trainer.save_W(os.path.join(output_dir, "generator/W.npy"))
@@ -75,7 +76,7 @@ y_scale = datasets[0][1].std()
 del datasets, generator; gc.collect()
 
 # build model
-model = gf.nets.GSNN(args.input_dir, args.regressor_idx)
+model = gf.nets.GSNN(args.input_dir, args.regressor_idx, seed=args.regressor_seed)
 
 # create trainer and callbacks
 trainer = gf.trainers.Trainer(model, epochs=args.epochs, lr=args.lr, y_scale=y_scale, device=args.device)
