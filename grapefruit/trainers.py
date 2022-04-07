@@ -39,7 +39,7 @@ class Trainer(object):
 				self.optimizer.zero_grad()
 				batch_logs["loss"].append(loss.item())
 				with torch.no_grad():
-					self.model.W_unconstrained.data = utils.normalize(self.model.W_unconstrained.data)
+					self.model.w_unconstrained.data = utils.normalize(self.model.w_unconstrained.data)
 			# callbacks at the end of the epoch
 			for cb in callbacks:
 				cb.end_of_epoch(epoch, batch_logs)
@@ -85,5 +85,5 @@ class Trainer(object):
 
 	def save_W(self, filename):
 		with torch.no_grad():
-			W = torch.einsum("i,ijk->jk", self.model.W_unconstrained, self.model.Ws).cpu().numpy()
+			W = torch.einsum("i,ijk->jk", self.model.w_unconstrained, self.model.Ws).cpu().numpy()
 		np.save(filename, W)

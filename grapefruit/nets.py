@@ -4,19 +4,15 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
-from . import utils
 
 
 class GSNN(nn.Module):
 
-	def __init__(self, input_dir, architecture_idx, seed=0, generate_data=False):
+	def __init__(self, input_dir, architecture_idx, a_init, w_unconstrained_init):
 		super(GSNN, self).__init__()
 		self.input_dir = input_dir
 		self.architecture_idx = architecture_idx
-		self.seed = seed
-		self.generate_data = generate_data
-
-		torch.manual_seed(seed)
+		self.a_init = a_init
 
 		filename = sorted(os.listdir(input_dir))[architecture_idx]
 		self.type = int( re.search(r"K([0-9]+)_", filename).group(1) )
@@ -26,23 +22,22 @@ class GSNN(nn.Module):
 			self.Ws = torch.tensor(f["Ws"], dtype=torch.float32)
 			self.z = torch.tensor(f["z"], dtype=torch.float32)
 
-		self.a = nn.Parameter(2*torch.bernoulli(torch.tensor(0.5))-1) \
-			if not generate_data else \
-			nn.Parameter(torch.tensor(1.0))
+		w_unconstrained_init = int(w_unconstrained_init)
+		self.w_unconstrained_init = np.zeros((self.Ws.shape[0]), dtype=np.float32)
+		self.w_unconstrained_init[np.abs(w_unconstrained_init)-1] = np.sign(w_unconstrained_init)
+
+		self.a = nn.Parameter(torch.tensor(self.a_init, dtype=torch.float32))
 		self.b = nn.Parameter(torch.tensor(0.0))
 		if self.type == 2:
 			self.b.requires_grad = False
 
-		self.W_unconstrained = nn.Parameter(utils.normalize(torch.randn(self.Ws.shape[0])))
-		self.c_unconstrained = nn.Parameter(0.1*torch.randn(self.U.shape[0])) \
-			if not generate_data else \
-			nn.Parameter(torch.zeros(self.U.shape[0]))
-
+		self.w_unconstrained = nn.Parameter(torch.tensor(self.w_unconstrained_init))
+		self.c_unconstrained = nn.Parameter(torch.zeros(self.U.shape[0]))
 		self.d = nn.Parameter(torch.tensor(0.0))
 
 
 	def forward(self, X):
-		W = torch.einsum("i,ijk->jk", self.W_unconstrained, self.Ws).t()
+		W = torch.einsum("i,ijk->jk", self.w_unconstrained, self.Ws).t()
 		bz = (self.b*self.z).unsqueeze(0)
 		c = torch.einsum("i,ij->j", self.c_unconstrained, self.U)
 		out = self.a*F.relu(X.mm(W)+bz).sum(1) + X.mv(c) + self.d

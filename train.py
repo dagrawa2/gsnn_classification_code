@@ -22,10 +22,11 @@ parser.add_argument('--dimension', '-di', default=6, type=int, help='Dimension o
 parser.add_argument('--n_points', '-np', default=10, type=int, help='Number of points per dimension of hypercube of data points.')
 # network architecture
 parser.add_argument('--input_dir', '-i', required=True, type=str, help='Directory of architectures.')
-parser.add_argument('--generator_idx', '-gi', required=True, type=int, help='Index of generator architecture in input directory.')
-parser.add_argument('--regressor_idx', '-ri', required=True, type=int, help='Index of regressor architecture in input directory.')
-parser.add_argument('--generator_seed', '-gs', default=0, type=int, help='Pytorch RNG seed for generator network.')
-parser.add_argument('--regressor_seed', '-ds', default=0, type=int, help='Pytorch RNG seed for regressor network.')
+parser.add_argument('--generator_arch_idx', '-gi', required=True, type=int, help='Index of generator architecture in input directory.')
+parser.add_argument('--regressor_arch_idx', '-ri', required=True, type=int, help='Index of regressor architecture in input directory.')
+parser.add_argument('--generator_init_w', '-gw', default=1, type=int, help='i such that w_unconstrained_init of generating network is e_i.')
+parser.add_argument('--regressor_init_w', '-rw', default=1, type=int, help='i such that w_unconstrained_init of regressing network is e_i.')
+parser.add_argument('--regressor_init_a', '-ra', default=1, type=float, help='Initial value of parameter a in regressing network.')
 # SGD hyperparameters
 parser.add_argument('--batch_size', '-b', default=128, type=int, help='Minibatch size.')
 parser.add_argument('--epochs', '-e', default=10, type=int, help='Number of epochs for training.')
@@ -37,6 +38,7 @@ parser.add_argument('--val_interval','-vi', default=0, type=int, help='Epoch int
 parser.add_argument('--device', '-dv', default="cpu", type=str, help='Device.')
 parser.add_argument('--output_dir', '-o', required=True, type=str, help='Output directory.')
 parser.add_argument('--exist_ok', '-ok', action="store_true", help='Allow overwriting the output directory.')
+parser.add_argument('--save_params', '-sp', action="store_true", help='Save parameters.')
 args=parser.parse_args()
 
 
@@ -51,14 +53,16 @@ time_start = time.time()
 # create output directory
 output_dir = args.output_dir
 os.makedirs(output_dir, exist_ok=args.exist_ok)
-os.makedirs(os.path.join(output_dir, "generator"), exist_ok=args.exist_ok)
-os.makedirs(os.path.join(output_dir, "regressor"), exist_ok=args.exist_ok)
+if args.save_params:
+	os.makedirs(os.path.join(output_dir, "generator"), exist_ok=args.exist_ok)
+	os.makedirs(os.path.join(output_dir, "regressor"), exist_ok=args.exist_ok)
 
 # build generating network
-generator = gf.nets.GSNN(args.input_dir, args.generator_idx, seed=args.generator_seed, generate_data=True)
+generator = gf.nets.GSNN(args.input_dir, args.generator_arch_idx, a_init=1, w_unconstrained_init=args.generator_init_w)
 trainer = gf.trainers.Trainer(generator, epochs=args.epochs, lr=args.lr, device=args.device)
-trainer.save_model(os.path.join(output_dir, "generator/model.pth"))
-trainer.save_W(os.path.join(output_dir, "generator/W.npy"))
+if args.save_params:
+	trainer.save_model(os.path.join(output_dir, "generator/model.pth"))
+	trainer.save_W(os.path.join(output_dir, "generator/W.npy"))
 
 # generate data
 x_train = np.linspace(-1, 1, args.n_points, endpoint=True)
@@ -76,7 +80,7 @@ y_scale = datasets[0][1].std()
 del datasets, generator; gc.collect()
 
 # build model
-model = gf.nets.GSNN(args.input_dir, args.regressor_idx, seed=args.regressor_seed)
+model = gf.nets.GSNN(args.input_dir, args.regressor_arch_idx, a_init=args.regressor_init_a, w_unconstrained_init=args.regressor_init_w)
 
 # create trainer and callbacks
 trainer = gf.trainers.Trainer(model, epochs=args.epochs, lr=args.lr, y_scale=y_scale, device=args.device)
@@ -104,7 +108,8 @@ results_dict["time"] = time.time()-time_start
 print("Saving results ...")
 with open(os.path.join(output_dir, "results.json"), "w") as fp:
 	json.dump(results_dict, fp, indent=2)
-trainer.save_model(os.path.join(output_dir, "regressor/model.pth"))
-trainer.save_W(os.path.join(output_dir, "regressor/W.npy"))
+if args.save_params:
+	trainer.save_model(os.path.join(output_dir, "regressor/model.pth"))
+	trainer.save_W(os.path.join(output_dir, "regressor/W.npy"))
 
 print("Done!")
