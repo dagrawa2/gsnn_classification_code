@@ -57,10 +57,10 @@ def plot_W(Ws, filename):
 	A = cmap(W)
 	plt.figure()
 	plt.matshow(A)
-	plt.xticks(np.arange(A.shape[1]), np.arange(A.shape[1])+1)
-	plt.yticks(np.arange(A.shape[0]), np.arange(A.shape[0])+1)
-	plt.xlabel("Input neurons", fontsize=16)
-	plt.ylabel("Hidden neurons", fontsize=16)
+	plt.xticks(np.arange(A.shape[1]), np.arange(A.shape[1])+1, fontsize=20)
+	plt.yticks(np.arange(A.shape[0]), np.arange(A.shape[0])+1, fontsize=20)
+#	plt.xlabel("Input neurons", fontsize=16)
+#	plt.ylabel("Hidden neurons", fontsize=16)
 	plt.savefig(filename+".png")
 	plt.close("all")
 
@@ -101,12 +101,12 @@ def plot_cohomology(rho_generators, z, colors, filename, layout="planar"):
 	pos = getattr(nx, "{}_layout".format(layout))(G)
 	signs = [1, -1]
 	styles = {1: "solid", -1: (0, (2, 2))}
-	nx.draw_networkx_nodes(G, pos=pos, node_color="white")
-	nx.draw_networkx_labels(G, pos=pos)
+	nx.draw_networkx_nodes(G, pos=pos, node_size=600, node_color="white", edgecolors="black")
+	nx.draw_networkx_labels(G, pos=pos, font_size=24)
 	for (color, sign) in itertools.product(colors, signs):
 		edge_list = [key for (key, value) in dict(G.edges).items() if value["color"]==color and value["sign"]==sign]
 		for edge in edge_list:
-			nx.draw_networkx_edges(G, pos=pos, edgelist=[edge], edge_color=color, style=styles[sign], connectionstyle="arc3, rad={}".format(G.edges[edge]["rad"]))
+			nx.draw_networkx_edges(G, pos=pos, edgelist=[edge], edge_color=color, style=styles[sign], connectionstyle="arc3, rad={}".format(G.edges[edge]["rad"]), arrowsize=20)
 	plt.savefig(filename+".png")
 	plt.close()
 
