@@ -1,11 +1,23 @@
 ### functions
 
-MyRightTransversal := function(G, H)
-	local out;;
+SortedElements := function(G)
+	local generators, powers, elements;;
+	generators := GeneratorsOfGroup(G);;
+	powers := List(Reversed(generators), g->List([0..Order(g)-1], n->g^n));;
+	elements := Unique(List(Cartesian(powers), L->Product(L)));;
+	return elements;;
+end;;
+
+MyRightTransversal := function(G, H, sorted_elements)
+	local out, sort_func, SortedMinimum;;
+	sort_func := function(g, h)
+		return Position(sorted_elements, g) < Position(sorted_elements, h);;
+	end;;
+	SortedMinimum := L -> sorted_elements[Minimum(List(L, g->Position(sorted_elements, g)))];;
 	out := rec();;
 	out.gaptransversal := RightTransversal(G, H);;
-	out.elements := List(out.gaptransversal, g->Minimum(List(H*g)));;
-	out.perm := Sortex(out.elements);;
+	out.elements := List(out.gaptransversal, g->SortedMinimum(List(H*g)));;
+	out.perm := Sortex(out.elements, sort_func);;
 	return out;;
 end;;
 
@@ -15,10 +27,15 @@ MyPositionCanonical := function(transversal, g)
 	return pos;;
 end;;
 
-SubgroupsUpToConjugacy := function(G)
-	local classes, reps;;
+SubgroupsUpToConjugacy := function(G, sorted_elements)
+	local classes, reps, subgroups;;
 	classes := ConjugacyClassesSubgroups(G);;
-	reps := List(classes, Representative);;
+	reps := [];;
+	for class in classes do
+		subgroups := List(class);;
+	pos := PositionMinimum(List(subgroups, H->Maximum(List(H, h->Position(sorted_elements, h)))));;
+	Add(reps, subgroups[pos]);;
+	od;;
 	return reps;;
 end;;
 
@@ -118,10 +135,12 @@ degree := Length(input[1]);;
 generators := List(input, PermList);;
 G := GroupWithGenerators(generators);;
 
-subgroups := SubgroupsUpToConjugacy(G);;
+sorted_elements := SortedElements(G);;
+
+subgroups := SubgroupsUpToConjugacy(G, sorted_elements);;
 output := [];;
 for H in subgroups do
-	transversal := MyRightTransversal(G, H);;
+	transversal := MyRightTransversal(G, H, sorted_elements);;
 	record := rec(H:=PermsToLists(H, degree), transversal:=PermsToLists(transversal.elements, degree), out:=[]);;
 
 	perms := [];;
@@ -139,11 +158,8 @@ for H in subgroups do
 	for K in H_subgroups do
 		signatures := List(cocycles, cocycle->CocycleSigns(cocycle, K));;
 		signed_perms := ListN(perms, signatures, HyperoctahedralElement);;
-		centralizer_generators := GeneratorsOfGroup (Centralizer(B_n, GroupWithGenerators(signed_perms)) );;
-		J_generators := GeneratorsOfGroup(Group(Union(centralizer_generators, signed_perms)));;
-		J_generators := List(J_generators, perm->SignedList(perm, n));;
 		rho_generators := List(signed_perms, perm->SignedList(perm, n));;
-		Add(record.out, rec(K:=PermsToLists(K, degree), J_generators:=J_generators, rho_generators:=rho_generators));;
+		Add(record.out, rec(K:=PermsToLists(K, degree), rho_generators:=rho_generators));;
 	od;;
 
 	Add(output, record);;

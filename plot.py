@@ -73,14 +73,14 @@ def textplot_W(Ws, filename):
 
 ### visualize cohomology
 
-def build_graph(rho_generators, z, colors):
-	n = len(z)
+def build_graph(rho_generators, colors):
+	n = len(rho_generators[0])
 	domain = np.arange(n)+1
 	G = nx.MultiDiGraph()
 	G.add_nodes_from(domain)
 	edge_counter = {}
 	for (gen, color) in zip(rho_generators, colors):
-		permuted = z*gf.permlib.Permutation(gen).inverse().action(z*domain)
+		permuted = gf.permlib.Permutation(gen).inverse().action(domain)
 		permuted, signs = np.abs(permuted), np.sign(permuted)
 		for (i, j, sign) in zip(domain, permuted, signs):
 			edge = tuple(sorted([i, j]))
@@ -95,9 +95,9 @@ def build_graph(rho_generators, z, colors):
 	return G
 
 
-def plot_cohomology(rho_generators, z, colors, filename, layout="planar"):
+def plot_cohomology(rho_generators, colors, filename, layout="planar"):
 	colors = colors[:len(rho_generators)]
-	G = build_graph(rho_generators, z, colors)
+	G = build_graph(rho_generators, colors)
 	pos = getattr(nx, "{}_layout".format(layout))(G)
 	signs = [1, -1]
 	styles = {1: "solid", -1: (0, (2, 2))}
@@ -111,9 +111,9 @@ def plot_cohomology(rho_generators, z, colors, filename, layout="planar"):
 	plt.close()
 
 
-def textplot_cohomology(rho_generators, z, colors, filename):
+def textplot_cohomology(rho_generators, colors, filename):
 	colors = colors[:len(rho_generators)]
-	G = build_graph(rho_generators, z, colors)
+	G = build_graph(rho_generators, colors)
 	with open(filename+".csv", "w") as f:
 		f.write("i,j,color,sign\n")
 		for (key, value) in dict(G.edges).items():
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
 	groups = sorted(os.listdir(results_dir))
 	colors = ["red", "blue", "green"]
-	layout = lambda group: "circular" if group[0]=="C" else "planar"
+	layout = lambda group: "planar" if group[0]=="D" else "circular"
 
 	print("Plotting . . . ")
 	for group in groups:
@@ -139,9 +139,9 @@ if __name__ == "__main__":
 			with np.load(os.path.join(results_dir, group, "npzs", filename)) as f:
 				filename = os.path.splitext(filename)[0]
 				plot_W(f["Ws"], os.path.join(plots_dir, "vis", group, "weights", filename))
-				plot_cohomology(f["rho_generators"], f["z"], colors, os.path.join(plots_dir, "vis", group, "cohomology", filename), layout=layout(group))
+				plot_cohomology(f["rho_generators"], colors, os.path.join(plots_dir, "vis", group, "cohomology", filename), layout=layout(group))
 				textplot_W(f["Ws"], os.path.join(plots_dir, "text", group, "weights", filename))
-				textplot_cohomology(f["rho_generators"], f["z"], colors, os.path.join(plots_dir, "text", group, "cohomology", filename))
+				textplot_cohomology(f["rho_generators"], colors, os.path.join(plots_dir, "text", group, "cohomology", filename))
 
 
 	print("Done!")
