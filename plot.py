@@ -7,11 +7,9 @@ import networkx as nx
 
 import grapefruit as gf
 
-import matplotlib
-#matplotlib.use("agg")
+import matplotlib as mpl
 import matplotlib.pyplot as plt
-matplotlib.rc("xtick", labelsize=10)
-matplotlib.rc("ytick", labelsize=10)
+mpl.rcParams["hatch.linewidth"] = 2.0
 
 np.random.seed(123)
 
@@ -53,10 +51,13 @@ def label_W(Ws, eps=1e-5):
 
 def plot_W(Ws, filename):
 	W = label_W(Ws)
-	cmap = generate_cmap(np.max(np.abs(W)), signed=(W<0).any())
-	A = cmap(W)
+	cmap = generate_cmap(np.max(np.abs(W)), signed=False)  # (W<0).any())
+	A = cmap(np.abs(W))
+	hatch_locs = np.argwhere(W<0)
 	plt.figure()
 	plt.matshow(A)
+	for (i, j) in hatch_locs:
+		plt.gca().add_patch(mpl.patches.Rectangle((j-0.5, i-0.5), 1, 1, hatch="//", fill=False, snap=False))
 	plt.xticks(np.arange(A.shape[1]), np.arange(A.shape[1])+1, fontsize=20)
 	plt.yticks(np.arange(A.shape[0]), np.arange(A.shape[0])+1, fontsize=20)
 #	plt.xlabel("Input neurons", fontsize=16)
@@ -100,7 +101,7 @@ def plot_cohomology(rho_generators, colors, filename, layout="planar"):
 	G = build_graph(rho_generators, colors)
 	pos = getattr(nx, "{}_layout".format(layout))(G)
 	signs = [1, -1]
-	styles = {1: "solid", -1: (0, (2, 2))}
+	styles = {1: "solid", -1: (0, (2, 4))}
 	nx.draw_networkx_nodes(G, pos=pos, node_size=600, node_color="white", edgecolors="black")
 	nx.draw_networkx_labels(G, pos=pos, font_size=24)
 	for (color, sign) in itertools.product(colors, signs):

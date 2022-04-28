@@ -3,10 +3,7 @@ import code
 import numpy as np
 
 import matplotlib
-#matplotlib.use("agg")
 import matplotlib.pyplot as plt
-#matplotlib.rc("xtick", labelsize=10)
-#matplotlib.rc("ytick", labelsize=10)
 
 
 def plot(m, tau, angle, filename, line=None, title=None, ylabel=None):
@@ -22,17 +19,18 @@ def plot(m, tau, angle, filename, line=None, title=None, ylabel=None):
 	input = np.stack([np.tile(x[None,:], [len(y), 1]), np.tile(y[:,None], [1, len(x)])], 0)
 	z = np.maximum(0, np.einsum("ij,jkl->ikl", W, input)+b).sum(0) \
 		+ np.einsum("j,jkl->kl", c, input)
+	levels = np.linspace(0.01, z.max(), 20)
 	plt.figure()
-	plt.contour(x, y, z, levels=20)
+	plt.contour(x, y, z, levels=levels)
 	plt.quiver(b*w_x, b*w_y, w_x, w_y, color="blue")
 	if tau == 1:
 		plt.quiver(0, 0, c[0], c[1], color="red")
 	if line is not None:
 		plt.plot([-2, 2], [-2*np.tan(line), 2*np.tan(line)], linestyle="dashed")
 	if title is not None:
-		plt.title(title, fontsize=8)
+		plt.title(title, fontsize=18)
 	if ylabel is not None:
-		plt.ylabel(ylabel, fontsize=8)
+		plt.ylabel(ylabel, fontsize=18)
 	plt.tight_layout()
 	plt.savefig(filename)
 	plt.close()
