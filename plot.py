@@ -29,7 +29,7 @@ def generate_cmap(n, signed=False):
 	return cmap_vec
 
 
-def label_W(Ws, eps=1e-5):
+def label_W(Ws, eps=1e-4):
 	coefficients = np.random.uniform(-1, 1, (Ws.shape[0]))
 	coefficients = coefficients/np.sqrt(np.sum(coefficients**2))
 	W = np.einsum("i,ijk->jk", coefficients, Ws)
