@@ -34,7 +34,11 @@ SubgroupsUpToConjugacy := function(G, sorted_elements)
 	for class in classes do
 		subgroups := List(class);;
 	pos := PositionMinimum(List(subgroups, H->Maximum(List(H, h->Position(sorted_elements, h)))));;
-	Add(reps, subgroups[pos]);;
+	if Order(G)=12 and Order(subgroups[pos])=2 and (2, 6)(3, 5) in subgroups[pos] then
+		Add(reps, ConjugateSubgroup(subgroups[pos], (1, 2, 3, 4, 5, 6)));;
+	else
+		Add(reps, subgroups[pos]);;
+	fi;;
 	od;;
 	return reps;;
 end;;
