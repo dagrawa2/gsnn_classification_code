@@ -24,6 +24,7 @@ This repository includes code and scripts to generate the figures in a paper.
 
 - [GAP >= 4.11.0](https://www.gap-system.org/Releases/4.11.0.html)
 - python >= 3.8.10
+- [galois](https://pypi.org/project/galois/)
 - matplotlib
 - networkx
 - numpy
