@@ -1,5 +1,8 @@
+[![Paper](https://img.shields.io/badge/paper-arXiv%3A2205.09219-B31B1B.svg)](https://arxiv.org/abs/2205.09219)
+
 # A Classification of G-invariant Shallow Neural Networks
 Devanshu Agrawal & James Ostrowski
+[arXiv:2205.09219](https://arxiv.org/abs/2205.09219)
 
 ### Abstract
 
