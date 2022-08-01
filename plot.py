@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 
-import grapefruit as gf
+import libcode as lc
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -81,7 +81,7 @@ def build_graph(rho_generators, colors):
 	G.add_nodes_from(domain)
 	edge_counter = {}
 	for (gen, color) in zip(rho_generators, colors):
-		permuted = gf.permlib.Permutation(gen).inverse().action(domain)
+		permuted = lc.permlib.Permutation(gen).inverse().action(domain)
 		permuted, signs = np.abs(permuted), np.sign(permuted)
 		for (i, j, sign) in zip(domain, permuted, signs):
 			edge = tuple(sorted([i, j]))

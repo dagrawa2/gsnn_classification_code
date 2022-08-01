@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.linalg import null_space
 
-import grapefruit as gf
+import libcode as lc
 
 
 # command-line arguments
@@ -29,8 +29,8 @@ os.makedirs(npzs_dir, exist_ok=True)
 
 # run GAP script
 print("Running GAP script . . . ")
-group_generators = gf.groups.group(args.group)
-gap_output = gf.gapcode.generate_representations(group_generators, os.path.join(output_dir, "gap_output.json"))
+group_generators = lc.groups.group(args.group)
+gap_output = lc.gapcode.generate_representations(group_generators, os.path.join(output_dir, "gap_output.json"))
 
 # initialize CSV log file
 csv_file = open(os.path.join(output_dir, "numbers.csv"), "w")
@@ -39,8 +39,8 @@ csv_file.write("json_idx_H,json_idx_K,order_H,order_K,type,class,proj_rank,accep
 # apply linear constraints
 print("Applying linear constraints . . . ")
 for (json_idx_H, dict_H) in enumerate(gap_output):
-	P_H, order_H = gf.permlib.projection_matrix(dict_H["H"], return_order=True)
-	transversal = [gf.permlib.Permutation(t).matrix() for t in dict_H["transversal"]]
+	P_H, order_H = lc.permlib.projection_matrix(dict_H["H"], return_order=True)
+	transversal = [lc.permlib.Permutation(t).matrix() for t in dict_H["transversal"]]
 	assert np.array_equal(transversal[0].astype(int), np.eye(transversal[0].shape[0], dtype=int)), "The first transversal element is expected to be the identity."
 	for (json_idx_K, dict_K) in enumerate(dict_H["out"]):
 		order_K = len(dict_K["K"])
@@ -48,7 +48,7 @@ for (json_idx_H, dict_H) in enumerate(gap_output):
 		if typenum == 1:
 			P = np.copy(P_H)
 		else:
-			P_K = gf.permlib.projection_matrix(dict_K["K"])
+			P_K = lc.permlib.projection_matrix(dict_K["K"])
 			P = P_K-P_H
 
 		csv_file.write("{:d},{:d},{:d},{:d},{:d},{:d},".format( \
