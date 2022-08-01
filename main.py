@@ -104,7 +104,7 @@ with open(os.path.join(output_dir, "notes.txt"), "w") as f:
 		f.write("{:d} | {}\n".format( \
 			order_G//order_H, ", ".join(map(str, ranks)) ))
 	# time
-	f.write("\nTime: {:d} s\n".format( \
-		int(time.time()-time_0) ))
+	f.write("\nTime: {:.1f} s\n".format( \
+		time.time()-time_0 ))
 
 print("Done!")
