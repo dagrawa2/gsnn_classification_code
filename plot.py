@@ -56,10 +56,11 @@ def plot_W(Ws, filename):
 	hatch_locs = np.argwhere(W<0)
 	plt.figure()
 	plt.matshow(A)
+	fs = round(20/4.8*np.maximum(4.8, plt.gcf().get_size_inches()[0]))
 	for (i, j) in hatch_locs:
 		plt.gca().add_patch(mpl.patches.Rectangle((j-0.5, i-0.5), 1, 1, hatch="//", fill=False, snap=False))
-	plt.xticks(np.arange(A.shape[1]), np.arange(A.shape[1])+1, fontsize=20)
-	plt.yticks(np.arange(A.shape[0]), np.arange(A.shape[0])+1, fontsize=20)
+	plt.xticks([], [])
+	plt.yticks(np.arange(A.shape[0]), np.arange(A.shape[0])+1, fontsize=fs)
 #	plt.xlabel("Input neurons", fontsize=16)
 #	plt.ylabel("Hidden neurons", fontsize=16)
 	plt.savefig(filename+".png")
